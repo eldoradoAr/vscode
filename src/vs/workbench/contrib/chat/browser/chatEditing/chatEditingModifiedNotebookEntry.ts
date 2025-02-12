@@ -24,7 +24,7 @@ import { SaveReason } from '../../../../common/editor.js';
 import { SnapshotContext } from '../../../../services/workingCopy/common/fileWorkingCopy.js';
 import { NotebookCellTextModel } from '../../../notebook/common/model/notebookCellTextModel.js';
 import { NotebookTextModel } from '../../../notebook/common/model/notebookTextModel.js';
-import { INotebookTextModel, IResolvedNotebookEditorModel } from '../../../notebook/common/notebookCommon.js';
+import { ICellEditOperation, INotebookTextModel, IResolvedNotebookEditorModel } from '../../../notebook/common/notebookCommon.js';
 import { INotebookEditorModelResolverService } from '../../../notebook/common/notebookEditorModelResolverService.js';
 import { INotebookService } from '../../../notebook/common/notebookService.js';
 import { ChatEditKind, ICellDiffInfo, IModifiedEntryTelemetryInfo, IModifiedNotebookFileEntry, IModifiedTextFileEntry, INotebookSnapshotEntry, INotebookSnapshotEntryDTO, ISnapshotEntry, WorkingSetEntryState } from '../../common/chatEditingService.js';
@@ -286,6 +286,10 @@ export class ChatEditingModifiedNotebookEntry2 extends ChatEditingModifiedBaseFi
 			return;
 		}
 		await this.acceptAgentCellEdits(cell, textEdits, isLastEdits, responseModel);
+	}
+
+	async acceptAgentNotebookEdits(edits: ICellEditOperation[], isLastEdits: boolean, responseModel: IChatResponseModel): Promise<void> {
+		//
 	}
 	async getOrCreateModifiedTextFileEntryForCell(cell: NotebookCellTextModel): Promise<ChatEditingModifiedFileEntry | undefined> {
 		let modifiedFileEntry = this.cellModels.get(cell);

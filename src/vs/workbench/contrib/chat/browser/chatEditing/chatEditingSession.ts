@@ -41,12 +41,13 @@ import { isNotebookEditorInput } from '../../../notebook/common/notebookEditorIn
 import { INotebookEditorModelResolverService } from '../../../notebook/common/notebookEditorModelResolverService.js';
 import { INotebookService } from '../../../notebook/common/notebookService.js';
 import { IChatAgentService } from '../../common/chatAgents.js';
-import { ChatEditingSessionChangeType, ChatEditingSessionState, ChatEditKind, getMultiDiffSourceUri, IChatEditingSession, IModifiedEntryTelemetryInfo, IModifiedFileEntry, ISnapshotEntry, ISnapshotEntryDTO, STORAGE_CONTENTS_FOLDER, STORAGE_STATE_FILE, WorkingSetDisplayMetadata, WorkingSetEntryRemovalReason, WorkingSetEntryState } from '../../common/chatEditingService.js';
+import { ChatEditingSessionChangeType, ChatEditingSessionState, ChatEditKind, getMultiDiffSourceUri, IChatEditingSession, IModifiedEntryTelemetryInfo, IModifiedFileEntry, ISnapshotEntry, ISnapshotEntryDTO, isTextFileEntry, STORAGE_CONTENTS_FOLDER, STORAGE_STATE_FILE, WorkingSetDisplayMetadata, WorkingSetEntryRemovalReason, WorkingSetEntryState } from '../../common/chatEditingService.js';
 import { IChatResponseModel } from '../../common/chatModel.js';
-import { IChatService } from '../../common/chatService.js';
+import { ICellEditReplaceOperation, IChatService } from '../../common/chatService.js';
 import { ChatEditingModifiedNotebookEntry2, NotebookSnapshotEntry } from './chatEditingModifiedNotebookEntry.js';
 import { ChatEditingModifiedFileEntry, TextSnapshotEntry } from './chatEditingModifiedFileEntry.js';
 import { ChatEditingTextModelContentProvider } from './chatEditingTextModelContentProviders.js';
+import { ICellEditOperation } from '../../../notebook/common/notebookCommon.js';
 
 
 class ThrottledSequencer extends Sequencer {
@@ -605,6 +606,10 @@ export class ChatEditingSession extends Disposable implements IChatEditingSessio
 		this._sequencer.queue(() => this._acceptTextEdits(resource, textEdits, isLastEdits, responseModel));
 	}
 
+	acceptNotebookEdits(resource: URI, edits: ICellEditReplaceOperation[], isLastEdits: boolean, responseModel: IChatResponseModel): void {
+		this._sequencer.queue(() => this._acceptNotebookEdits(resource, edits, isLastEdits, responseModel));
+	}
+
 	resolve(): void {
 		if (this._state.get() === ChatEditingSessionState.Disposed) {
 			// we don't throw in this case because there could be a builder still connected to a disposed session
@@ -730,6 +735,21 @@ export class ChatEditingSession extends Disposable implements IChatEditingSessio
 		};
 		const entry = await this._getOrCreateModifiedFileEntry(resource, telemetryInfo);
 		await entry.acceptAgentEdits(resource, textEdits, isLastEdits, responseModel);
+	}
+
+	private async _acceptNotebookEdits(resource: URI, edits: ICellEditOperation[], isLastEdits: boolean, responseModel: IChatResponseModel): Promise<void> {
+		const telemetryInfo = new class {
+			get agentId() { return responseModel.agent?.id; }
+			get command() { return responseModel.slashCommand?.name; }
+			get sessionId() { return responseModel.session.sessionId; }
+			get requestId() { return responseModel.requestId; }
+			get result() { return responseModel.result; }
+		};
+		const entry = await this._getOrCreateModifiedFileEntry(resource, telemetryInfo);
+		if (entry && !isTextFileEntry(entry)) {
+			await entry.acceptAgentNotebookEdits(edits, isLastEdits, responseModel);
+			// await this._editorService.openEditor({ resource: entry.modifiedURI, options: { inactive: true } });
+		}
 	}
 
 	private async _resolve(): Promise<void> {
