@@ -24,6 +24,7 @@ import { IListService } from '../../../../../platform/list/browser/listService.j
 import { IEditorGroupsService } from '../../../../services/editor/common/editorGroupsService.js';
 import { MultiDiffEditorInput } from '../../../multiDiffEditor/browser/multiDiffEditorInput.js';
 import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { getChatEditorController } from './chatEditingHelpers.js';
 
 abstract class NavigateAction extends Action2 {
 
@@ -70,7 +71,7 @@ abstract class NavigateAction extends Action2 {
 		if (!isCodeEditor(editor) || !editor.hasModel()) {
 			return;
 		}
-		const ctrl = ChatEditorController.get(editor);
+		const ctrl = getChatEditorController(editor);
 		if (!ctrl) {
 			return;
 		}
@@ -128,7 +129,7 @@ async function openNextOrPreviousChange(accessor: ServicesAccessor, session: ICh
 
 	const newEditor = newEditorPane?.getControl();
 	if (isCodeEditor(newEditor)) {
-		ChatEditorController.get(newEditor)?.initNavigation();
+		getChatEditorController(newEditor)?.initNavigation();
 	}
 	return true;
 }
@@ -257,7 +258,7 @@ class RejectHunkAction extends EditorAction2 {
 	}
 
 	override runEditorCommand(_accessor: ServicesAccessor, editor: ICodeEditor, ...args: any[]) {
-		ChatEditorController.get(editor)?.rejectNearestChange(args[0]);
+		getChatEditorController(editor)?.rejectNearestChange(args[0]);
 	}
 }
 
@@ -283,7 +284,7 @@ class AcceptHunkAction extends EditorAction2 {
 	}
 
 	override runEditorCommand(_accessor: ServicesAccessor, editor: ICodeEditor, ...args: any[]) {
-		ChatEditorController.get(editor)?.acceptNearestChange(args[0]);
+		getChatEditorController(editor)?.acceptNearestChange(args[0]);
 	}
 }
 
@@ -317,7 +318,7 @@ class ToggleDiffAction extends EditorAction2 {
 	}
 
 	override runEditorCommand(_accessor: ServicesAccessor, editor: ICodeEditor, ...args: any[]) {
-		ChatEditorController.get(editor)?.toggleDiff(args[0]);
+		getChatEditorController(editor)?.toggleDiff(args[0]);
 	}
 }
 
